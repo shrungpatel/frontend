@@ -1,5 +1,6 @@
 .App {
   text-align: center;
+  font-family:Verdana, Geneva, Tahoma, sans-serif ;
 }
 
 .App-logo {
@@ -35,4 +36,25 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+.table {
+  justify-content: center;
+  display:grid;
+}
+
+form {
+  padding-top: 10px;
+  min-width: 30px;
+  border-color: black;
+  border-radius: 10px;
+}
+
+td {
+  /*border-radius: 10px; */
+  font-size: large;
+}
+
+input {
+  text-align: center; 
 }

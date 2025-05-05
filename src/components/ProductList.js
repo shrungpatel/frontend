@@ -8,7 +8,7 @@ const ProductList = () => {
   const [productName, setProductName] = useState('');
   const [storeName, setStoreName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [editingProduct, setEditingProduct] = useState(null); // For editing a product
+  const [editingProduct, setEditingProduct] = useState(null);
 
   useEffect(() => {
     fetchProducts();
@@ -18,7 +18,8 @@ const ProductList = () => {
     try {
       const response = await axios.get('http://localhost:5000/api/products/getAll');
       setProducts(response.data);
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error fetching products:', error);
       alert('Something went wrong while fetching products. Please try again later.');
     }
@@ -29,7 +30,7 @@ const ProductList = () => {
       const sanitized_id = sanitize(id);
       const response = await axios.delete(`http://localhost:5000/api/products/${sanitized_id}`);
       console.log('Product deleted:', response.data);
-      fetchProducts(); // Refresh the product list
+      fetchProducts();
     } catch (error) {
       alert('Could not delete product');
       console.error('Error deleting product:', error);
@@ -42,13 +43,17 @@ const ProductList = () => {
       alert('Please specify the name of the product you intend to buy.');
       return;
     }
+    if (!storeName) {
+      var storeName = "Any";
+    }
     try {
       await axios.post('http://localhost:5000/api/products/add', { productName, storeName });
       setProductName('');
       setStoreName('');
       alert('Product has been added');
       fetchProducts();
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error adding product:', error);
     }
   };
@@ -100,7 +105,8 @@ const ProductList = () => {
       const response = await axios.put(`http://localhost:5000/api/products/update/${sanitize(editingProduct._id)}`, updatedProduct);
       console.log('Product updated:', response.data);
       fetchProducts();
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error updating product:', error);
       alert("Error: Please try editing your product later.");
     }

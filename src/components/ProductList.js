@@ -1,21 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../App.css';
-import { Snackbar, Alert } from '@mui/material';
+import sanitize from 'mongo-sanitize';
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
   const [productName, setProductName] = useState('');
   const [storeName, setStoreName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  //const [added, setAdded] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null); // For editing a product
 
-  // Fetch all products on page load
   useEffect(() => {
     fetchProducts();
   }, []);
 
-  // Function to fetch all products
   const fetchProducts = async () => {
     try {
       const response = await axios.get('http://localhost:5000/api/products/getAll');
@@ -28,77 +26,106 @@ const ProductList = () => {
 
   const handleDelete = async (id) => {
     try {
-      // Ensure that the URL follows the same structure as your other API calls
-      //const response = await axios.delete(`http://localhost:5000/api/products/delete/${id}`);
-      const response = await axios.delete(`http://localhost:5000/api/products/${id}`);
-
-      
-      // Log the success response or handle accordingly
+      const sanitized_id = sanitize(id);
+      const response = await axios.delete(`http://localhost:5000/api/products/${sanitized_id}`);
       console.log('Product deleted:', response.data);
-      
-      // Re-fetch the products list after deletion to reflect the change
-      fetchProducts(); 
+      fetchProducts(); // Refresh the product list
     } catch (error) {
-      // Handle error and display an alert to the user
       alert('Could not delete product');
       console.error('Error deleting product:', error);
     }
   };
 
-  // Function to handle product submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!productName || !storeName) {
-      alert('Both fields are required');
+    if (!productName) {
+      alert('Please specify the name of the product you intend to buy.');
       return;
     }
-
     try {
       await axios.post('http://localhost:5000/api/products/add', { productName, storeName });
       setProductName('');
       setStoreName('');
       alert('Product has been added');
-      //setAdded(true);
-      fetchProducts(); // Refresh the product list
+      fetchProducts();
     } catch (error) {
       console.error('Error adding product:', error);
     }
   };
 
-  // for the success message
-  /*const handleClose = (event, reason) => {
-    if (reason === 'clickaway') {
-      return;
-    }
-    setAdded(false);
-  };*/
-
-  // Function to handle search
   const handleSearch = async () => {
     if (searchQuery) {
       try {
-        const response = await axios.get(`http://localhost:5000/api/products/search?query=${searchQuery}`);
+        const searchQuerySanitized = sanitize(searchQuery);
+        const response = await axios.get(`http://localhost:5000/api/products/search?query=${searchQuerySanitized}`);
+        const any_response = await axios.get(`http://localhost:5000/api/products/search?query=Any`);
+        // ... adds products with any store to the list
+        response.data.push(...any_response.data);
         setProducts(response.data);
-      } catch (error) {
+      }
+      catch (error) {
         console.error('Error searching products:', error);
       }
-    } else {
-      fetchProducts(); // Fetch all products if the search query is empty
     }
+    else {
+      fetchProducts();
+    }
+    cancelEdit();
+  };
+
+  const handleEdit = (product) => {
+    setEditingProduct(product); // Set the product to edit
+    setProductName(product.productName); // Set the form inputs with existing values
+    setStoreName(product.storeName);
+    fetchProducts();
+  };
+
+  const cancelEdit = () => {
+    setProductName('');
+    setStoreName('');
+    setEditingProduct(null);
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    if (!productName) {
+      alert('Please specify the product name.');
+      return;
+    }
+
+    try {
+      const updatedProduct = { productName, storeName };
+      console.log('Editing product ID:', editingProduct._id);
+      console.log('Updated product data:', updatedProduct);
+      const response = await axios.put(`http://localhost:5000/api/products/update/${sanitize(editingProduct._id)}`, updatedProduct);
+      console.log('Product updated:', response.data);
+      fetchProducts();
+    } catch (error) {
+      console.error('Error updating product:', error);
+      alert("Error: Please try editing your product later.");
+    }
+    cancelEdit();
   };
 
   return (
     <div>
       <h1>Product Store List</h1>
-      <div className='group'>
-      <input
-        type="text"
-        placeholder="Search products or stores"
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-      />
-      <br/>
-      <button onClick={handleSearch}>Search</button>
+
+      <div className="group">
+        <input
+          type="text"
+          placeholder="Search products or stores"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{
+            border: 'none',
+            borderBottom: '2px solid',
+            outline: 'none',
+          }}
+        />
+        <br />
+        <br />
+        <button onClick={handleSearch}>Search</button>
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -107,18 +134,66 @@ const ProductList = () => {
           placeholder="Product Name"
           value={productName}
           onChange={(e) => setProductName(e.target.value)}
+          style={{
+            border: 'none',
+            borderBottom: '2px solid',
+            outline: 'none',
+          }}
         />
-        <br/>
+        <br />
+        <br />
         <input
           type="text"
           placeholder="Store Name"
           value={storeName}
           onChange={(e) => setStoreName(e.target.value)}
+          style={{
+            border: 'none',
+            borderBottom: '2px solid',
+            outline: 'none',
+          }}
         />
-        <br/>
+        <br />
+        <br />
         <button type="submit">Add Product</button>
       </form>
-      
+
+      {editingProduct && (
+        <div>
+          <h2>Edit Product</h2>
+          <form onSubmit={handleUpdate}>
+            <input
+              type="text"
+              placeholder="Edit Product Name"
+              value={productName}
+              onChange={(e) => setProductName(e.target.value)}
+              style={{
+                border: 'none',
+                borderBottom: '2px solid',
+                outline: 'none',
+              }}
+            />
+            <br />
+            <br />
+            <input
+              type="text"
+              placeholder="Edit Store Name"
+              value={storeName}
+              onChange={(e) => setStoreName(e.target.value)}
+              style={{
+                border: 'none',
+                borderBottom: '2px solid',
+                outline: 'none',
+              }}
+            />
+            <br />
+            <br />
+            <button type="submit">Update Product</button>
+          </form>
+          <button type="submit" onClick={cancelEdit}>Cancel</button>
+        </div>
+      )}
+
       <table
         className="table"
         style={{
@@ -129,35 +204,14 @@ const ProductList = () => {
       >
         <thead>
           <tr>
-            <th
-              style={{
-                backgroundColor: 'lightcyan',
-                padding: '10px',
-                textAlign: 'center',
-                width: '33%', // Set width for the column
-              }}
-            >
+            <th style={{ backgroundColor: 'lightcyan', padding: '10px', textAlign: 'center', width: '36%' }}>
               Product
             </th>
-            <th
-              style={{
-                backgroundColor: 'lightpink',
-                padding: '10px',
-                textAlign: 'center',
-                width: '37%', // Set width for the column
-              }}
-            >
+            <th style={{ backgroundColor: 'lightpink', padding: '10px', textAlign: 'center', width: '32%' }}>
               Store
             </th>
-            <th
-              style={{
-                backgroundColor: 'lightgreen',
-                padding: '10px',
-                textAlign: 'center',
-                width: '30%', // Set width for the column
-              }}
-            >
-              Purchased
+            <th style={{ backgroundColor: 'lightgreen', padding: '10px', textAlign: 'center', width: '24%' }}>
+              Actions
             </th>
           </tr>
         </thead>
@@ -170,17 +224,11 @@ const ProductList = () => {
                 borderBottom: '1px solid #ddd',
               }}
             >
-              <td style={{ padding: '8px', textAlign: 'center', width: '33%' }}>
-                {product.productName}
-              </td>
-              <td style={{ padding: '4px', textAlign: 'center', width: '37%' }}>
-                {product.storeName}
-              </td>
+              <td style={{ padding: '8px', textAlign: 'center', width: '33%' }}>{product.productName}</td>
+              <td style={{ padding: '4px', textAlign: 'center', width: '37%' }}>{product.storeName}</td>
               <td style={{ padding: '2px', textAlign: 'center', width: '30%' }}>
-                <button
-                  onClick={() => handleDelete(product._id)}>
-                    Delete
-                </button>
+                <button onClick={() => handleEdit(product)}>Edit</button>
+                <button onClick={() => handleDelete(product._id)}>Delete</button>
               </td>
             </tr>
           ))}
@@ -191,31 +239,3 @@ const ProductList = () => {
 };
 
 export default ProductList;
-/*
-
-<input
-                  type="checkbox"
-                  name="checkfield"
-                  id={`checkbox-${product._id}`}
-                  style={{ margin: '5px' }}
-                  onClick={() => handleDelete(product._id)}
-                />
-
-<Snackbar
-        added={added} // Open when true
-        autoHideDuration={3000} // Auto hide after 3 seconds
-        onClose={handleClose}
-        anchorOrigin={{
-          vertical: 'bottom', // Position at the bottom
-          horizontal: 'center', // Center horizontally
-        }}
-      >
-        <Alert
-          onClose={handleClose}
-          severity="success" // Set to "success" to show a green toast
-          sx={{ width: '100%' }}
-        >
-          Product added successfully!
-        </Alert>
-      </Snackbar>
-      */

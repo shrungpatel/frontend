@@ -43,11 +43,17 @@ const ProductList = () => {
       alert('Please specify the name of the product you intend to buy.');
       return;
     }
-    if (!storeName) {
-      var storeName = "Any";
+    console.log(storeName);
+    let sanitized_store = "";
+    if (storeName == "") {
+      sanitized_store = "Any";
     }
+    else {
+      sanitized_store = sanitize(storeName)
+    }
+    console.log(sanitized_store);
     try {
-      await axios.post('http://localhost:5000/api/products/add', { productName, storeName });
+      await axios.post('http://localhost:5000/api/products/add', { productName, storeName: sanitized_store });
       setProductName('');
       setStoreName('');
       alert('Product has been added');

@@ -251,3 +251,29 @@ const ProductList = () => {
 };
 
 export default ProductList;
+
+/*
+const Recommendations = ({ shoppingList }) => {
+  const [recommendations, setRecommendations] = useState([]);
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+    const response = await axios.get('/api/recommendations', {
+        params: { shoppingList },
+      });
+    setRecommendations(response.data);
+  };
+  fetchRecommendations();
+  }, [shoppingList]);
+
+  return (
+    <div>
+      <h2>Recommended Items</h2>
+      <ul>
+        {recommendations.map((item, index) => (
+          <li key={index}>{item}</li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+*/
